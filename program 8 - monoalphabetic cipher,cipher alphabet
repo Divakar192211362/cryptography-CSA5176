@@ -1,0 +1,59 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define ALPHABET_SIZE 26
+
+
+void create_cipher_alphabet(const char *keyword, char *cipher) {
+    int used[ALPHABET_SIZE] = {0}; 
+    int index = 0;
+
+
+    for (int i = 0; keyword[i] != '\0'; i++) {
+        char c = toupper(keyword[i]);
+        if (isalpha(c) && !used[c - 'A']) {
+            cipher[index++] = c;
+            used[c - 'A'] = 1; 
+        }
+    }
+
+  
+    for (char c = 'A'; c <= 'Z'; c++) {
+        if (!used[c - 'A']) {
+            cipher[index++] = c;
+        }
+    }
+    cipher[index] = '\0'; 
+}
+
+
+void encrypt(const char *plaintext, const char *cipher, char *ciphertext) {
+    for (int i = 0; plaintext[i] != '\0'; i++) {
+        char c = toupper(plaintext[i]);
+        if (isalpha(c)) {
+            ciphertext[i] = cipher[c - 'A']; 
+        } else {
+            ciphertext[i] = plaintext[i]; 
+        }
+    }
+    ciphertext[strlen(plaintext)] = '\0'; 
+}
+
+int main() {
+    const char *keyword = "CIPHER";
+    const char *plaintext = "HELLO WORLD";
+    char cipher[ALPHABET_SIZE + 1]; 
+    char ciphertext[1024]; 
+
+    create_cipher_alphabet(keyword, cipher);
+
+
+    encrypt(plaintext, cipher, ciphertext);
+
+  
+    printf("Cipher Alphabet: %s\n", cipher);
+    printf("Encrypted Message: %s\n", ciphertext);
+
+    return 0;
+}

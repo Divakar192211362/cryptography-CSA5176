@@ -1,0 +1,109 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define SIZE 5
+
+
+char keyTable[SIZE][SIZE] = {
+    {'M', 'F', 'H', 'I', 'J'},
+    {'K', 'U', 'N', 'O', 'P'},
+    {'Q', 'Z', 'V', 'W', 'X'},
+    {'Y', 'E', 'L', 'A', 'R'},
+    {'G', 'D', 'S', 'T', 'B'}
+};
+
+void findPosition(char ch, int *row, int *col) {
+    if (ch == 'J') ch = 'I'; 
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (keyTable[i][j] == ch) {
+                *row = i;
+                *col = j;
+                return;
+            }
+        }
+    }
+}
+
+
+void encryptDigraph(char digraph[], char encrypted[]) {
+    int row1, col1, row2, col2;
+    findPosition(digraph[0], &row1, &col1);
+    findPosition(digraph[1], &row2, &col2);
+
+    if (row1 == row2) {
+ 
+        encrypted[0] = keyTable[row1][(col1 + 1) % SIZE];
+        encrypted[1] = keyTable[row2][(col2 + 1) % SIZE];
+    } else if (col1 == col2) {
+
+        encrypted[0] = keyTable[(row1 + 1) % SIZE][col1];
+        encrypted[1] = keyTable[(row2 + 1) % SIZE][col2];
+    } else {
+
+        encrypted[0] = keyTable[row1][col2];
+        encrypted[1] = keyTable[row2][col1];
+    }
+}
+
+
+void prepareText(char plaintext[], char preparedText[]) {
+    int len = 0;
+    for (int i = 0; i < strlen(plaintext); i++) {
+        if (isalpha(plaintext[i])) {
+            preparedText[len++] = toupper(plaintext[i]);
+        }
+    }
+    preparedText[len] = '\0';
+
+
+    char temp[512];
+    len = 0;
+    for (int i = 0; i < strlen(preparedText); i++) {
+        temp[len++] = preparedText[i];
+        if (i < strlen(preparedText) - 1 && preparedText[i] == preparedText[i + 1]) {
+            temp[len++] = 'X';
+        }
+    }
+    temp[len] = '\0';
+    strcpy(preparedText, temp);
+
+
+    if (strlen(preparedText) % 2 != 0) {
+        preparedText[len++] = 'X';
+        preparedText[len] = '\0';
+    }
+}
+
+
+void encryptPlayfair(char plaintext[], char ciphertext[]) {
+    char digraph[2], encrypted[2];
+    int i = 0, j = 0;
+    while (plaintext[i] != '\0') {
+        digraph[0] = plaintext[i];
+        digraph[1] = plaintext[i + 1];
+        encryptDigraph(digraph, encrypted);
+        ciphertext[j++] = encrypted[0];
+        ciphertext[j++] = encrypted[1];
+        i += 2;
+    }
+    ciphertext[j] = '\0';
+}
+
+int main() {
+    char plaintext[512], preparedText[512], ciphertext[512];
+    
+
+    strcpy(plaintext, "Must see you over Cadogan West. Coming at once.");
+    
+
+    prepareText(plaintext, preparedText);
+
+    encryptPlayfair(preparedText, ciphertext);
+
+  
+    printf("Ciphertext: %s\n", ciphertext);
+
+    return 0;
+}

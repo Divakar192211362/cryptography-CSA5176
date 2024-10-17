@@ -1,0 +1,72 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_CHAR 256
+
+
+void frequency_analysis(const char *ciphertext, int freq[]) {
+    for (int i = 0; ciphertext[i] != '\0'; i++) {
+        if (isalnum(ciphertext[i])) { 
+            freq[(unsigned char)ciphertext[i]]++;
+        }
+    }
+}
+
+
+void build_substitution_key(int freq[], char *key) {
+    char common_letters[] = "etaoinshrdlcumwfgypbvkjxqz"; 
+    int sorted_indices[MAX_CHAR];
+    
+
+    for (int i = 0; i < MAX_CHAR; i++) {
+        sorted_indices[i] = i;
+    }
+
+    for (int i = 0; i < MAX_CHAR - 1; i++) {
+        for (int j = i + 1; j < MAX_CHAR; j++) {
+            if (freq[sorted_indices[i]] < freq[sorted_indices[j]]) {
+                int temp = sorted_indices[i];
+                sorted_indices[i] = sorted_indices[j];
+                sorted_indices[j] = temp;
+            }
+        }
+    }
+
+    for (int i = 0; i < 26 && sorted_indices[i] < MAX_CHAR; i++) {
+        key[sorted_indices[i]] = common_letters[i];
+    }
+}
+
+
+void decrypt(const char *ciphertext, const char *key, char *plaintext) {
+    for (int i = 0; ciphertext[i] != '\0'; i++) {
+        if (isalnum(ciphertext[i])) {
+            plaintext[i] = key[(unsigned char)ciphertext[i]];
+        } else {
+            plaintext[i] = ciphertext[i];
+        }
+    }
+    plaintext[strlen(ciphertext)] = '\0'; 
+}
+
+int main() {
+    const char *ciphertext = "5311+305))6:4826)4)41):806:48+8*60))85::]8*::*8183...(rest of ciphertext)";
+    int freq[MAX_CHAR] = {0};
+    char key[MAX_CHAR];
+    char plaintext[1024]; 
+
+    frequency_analysis(ciphertext, freq);
+
+    memset(key, 0, sizeof(key)); 
+    build_substitution_key(freq, key);
+
+
+    decrypt(ciphertext, key, plaintext);
+
+
+    printf("Decrypted message: %s\n", plaintext);
+
+    return 0;
+}

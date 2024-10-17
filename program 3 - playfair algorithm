@@ -1,0 +1,103 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define SIZE 5
+
+
+void generateKeyMatrix(char key[], char matrix[SIZE][SIZE]) {
+    int alphabets[26] = {0};
+    int i, j, k = 0;
+
+
+    for (i = 0; i < strlen(key); i++) {
+        char ch = toupper(key[i]);
+        if (ch == 'J') ch = 'I'; 
+        if (!alphabets[ch - 'A']) {
+            matrix[k / SIZE][k % SIZE] = ch;
+            alphabets[ch - 'A'] = 1;
+            k++;
+        }
+    }
+
+ 
+    for (i = 0; i < 26; i++) {
+        if (i + 'A' == 'J') continue; 
+        if (!alphabets[i]) {
+            matrix[k / SIZE][k % SIZE] = 'A' + i;
+            k++;
+        }
+    }
+}
+
+void prepareText(char plaintext[], char processedText[]) {
+    int len = strlen(plaintext), j = 0;
+    for (int i = 0; i < len; i++) {
+        if (isalpha(plaintext[i])) {
+            char ch = toupper(plaintext[i]);
+            if (ch == 'J') ch = 'I'; 
+            processedText[j++] = ch;
+            if (j > 1 && processedText[j - 1] == processedText[j - 2]) {
+                processedText[j - 1] = 'X';
+                processedText[j++] = ch;
+            }
+        }
+    }
+    if (j % 2 != 0) processedText[j++] = 'X'; 
+    processedText[j] = '\0';
+}
+
+
+void findPosition(char matrix[SIZE][SIZE], char ch, int *row, int *col) {
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (matrix[i][j] == ch) {
+                *row = i;
+                *col = j;
+                return;
+            }
+        }
+    }
+}
+
+void encryptText(char processedText[], char matrix[SIZE][SIZE], char ciphertext[]) {
+    int len = strlen(processedText);
+    for (int i = 0; i < len; i += 2) {
+        int row1, col1, row2, col2;
+        findPosition(matrix, processedText[i], &row1, &col1);
+        findPosition(matrix, processedText[i + 1], &row2, &col2);
+
+        if (row1 == row2) { 
+            ciphertext[i] = matrix[row1][(col1 + 1) % SIZE];
+            ciphertext[i + 1] = matrix[row2][(col2 + 1) % SIZE];
+        } else if (col1 == col2) { 
+            ciphertext[i] = matrix[(row1 + 1) % SIZE][col1];
+            ciphertext[i + 1] = matrix[(row2 + 1) % SIZE][col2];
+        } else { 
+            ciphertext[i] = matrix[row1][col2];
+            ciphertext[i + 1] = matrix[row2][col1];
+        }
+    }
+    ciphertext[len] = '\0';
+}
+
+int main() {
+    char key[SIZE * SIZE], plaintext[256], processedText[256], ciphertext[256];
+    char matrix[SIZE][SIZE];
+
+    printf("Enter the keyword: ");
+    fgets(key, sizeof(key), stdin);
+    key[strcspn(key, "\n")] = '\0';
+
+    printf("Enter the plaintext: ");
+    fgets(plaintext, sizeof(plaintext), stdin);
+    plaintext[strcspn(plaintext, "\n")] = '\0';
+
+    generateKeyMatrix(key, matrix);
+    prepareText(plaintext, processedText);
+    encryptText(processedText, matrix, ciphertext);
+
+    printf("Ciphertext: %s\n", ciphertext);
+
+    return 0;
+}

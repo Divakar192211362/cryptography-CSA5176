@@ -1,0 +1,98 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define SIZE 5
+
+
+void prepareKeyTable(char key[], char keyTable[SIZE][SIZE]) {
+    int flag[26] = {0};
+    int i, j, k = 0;
+    char alphabet = 'A';
+
+
+    for (i = 0; i < strlen(key); i++) {
+        if (key[i] != 'J' && !flag[key[i] - 'A']) {
+            keyTable[k / SIZE][k % SIZE] = key[i];
+            flag[key[i] - 'A'] = 1;
+            k++;
+        }
+    }
+
+
+    for (i = 0; i < 26; i++) {
+        if (alphabet != 'J' && !flag[alphabet - 'A']) {
+            keyTable[k / SIZE][k % SIZE] = alphabet;
+            k++;
+        }
+        alphabet++;
+    }
+}
+
+void findPosition(char ch, char keyTable[SIZE][SIZE], int *row, int *col) {
+    if (ch == 'J') ch = 'I'; 
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (keyTable[i][j] == ch) {
+                *row = i;
+                *col = j;
+                return;
+            }
+        }
+    }
+}
+
+
+void decryptDigraph(char digraph[], char keyTable[SIZE][SIZE], char decrypted[]) {
+    int row1, col1, row2, col2;
+    findPosition(digraph[0], keyTable, &row1, &col1);
+    findPosition(digraph[1], keyTable, &row2, &col2);
+
+    if (row1 == row2) {
+
+        decrypted[0] = keyTable[row1][(col1 - 1 + SIZE) % SIZE];
+        decrypted[1] = keyTable[row2][(col2 - 1 + SIZE) % SIZE];
+    } else if (col1 == col2) {
+ 
+        decrypted[0] = keyTable[(row1 - 1 + SIZE) % SIZE][col1];
+        decrypted[1] = keyTable[(row2 - 1 + SIZE) % SIZE][col2];
+    } else {
+ 
+        decrypted[0] = keyTable[row1][col2];
+        decrypted[1] = keyTable[row2][col1];
+    }
+}
+
+
+void decryptPlayfair(char ciphertext[], char keyTable[SIZE][SIZE], char plaintext[]) {
+    int i = 0, j = 0;
+    char digraph[2], decrypted[2];
+    while (ciphertext[i] != '\0') {
+        digraph[0] = ciphertext[i];
+        digraph[1] = ciphertext[i + 1];
+        decryptDigraph(digraph, keyTable, decrypted);
+        plaintext[j] = decrypted[0];
+        plaintext[j + 1] = decrypted[1];
+        i += 2;
+        j += 2;
+    }
+    plaintext[j] = '\0';
+}
+
+int main() {
+    char key[100], ciphertext[512], keyTable[SIZE][SIZE], plaintext[512];
+    
+
+    strcpy(key, "KEYWORD");
+
+    strcpy(ciphertext, "KXJEYUREBEZWEHEWRYTUHEYFSKREHEGOYFIWITTUOLKSYCAJPOΒΟΤΕΙΖΟΝTXBYBNTGONEYCUZWRGDSONSXBOUYWRHEBAAHYUSEDQ");
+
+    prepareKeyTable(key, keyTable);
+    
+
+    decryptPlayfair(ciphertext, keyTable, plaintext);
+
+    printf("Decrypted message: %s\n", plaintext);
+    
+    return 0;
+}

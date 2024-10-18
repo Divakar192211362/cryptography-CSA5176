@@ -1,0 +1,98 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MATRIX_SIZE 2
+
+
+int determinant(int matrix[MATRIX_SIZE][MATRIX_SIZE]) {
+    return (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]);
+}
+
+
+int mod_inverse(int num, int mod) {
+    num = num % mod;
+    for (int x = 1; x < mod; x++) {
+        if ((num * x) % mod == 1) {
+            return x;
+        }
+    }
+    return -1; 
+}
+
+
+int inverse_matrix(int matrix[MATRIX_SIZE][MATRIX_SIZE], int inv_matrix[MATRIX_SIZE][MATRIX_SIZE]) {
+    int det = determinant(matrix);
+    int det_inv = mod_inverse(det, 26);
+
+    if (det_inv == -1) {
+        printf("Matrix inverse does not exist.\n");
+        return 0;
+    }
+
+    inv_matrix[0][0] = (matrix[1][1] * det_inv) % 26;
+    inv_matrix[0][1] = (-matrix[0][1] * det_inv) % 26;
+    inv_matrix[1][0] = (-matrix[1][0] * det_inv) % 26;
+    inv_matrix[1][1] = (matrix[0][0] * det_inv) % 26;
+
+
+    for (int i = 0; i < MATRIX_SIZE; i++) {
+        for (int j = 0; j < MATRIX_SIZE; j++) {
+            if (inv_matrix[i][j] < 0) {
+                inv_matrix[i][j] += 26;
+            }
+        }
+    }
+
+    return 1;
+}
+
+
+void multiply_matrices(int matrix1[MATRIX_SIZE][MATRIX_SIZE], int matrix2[MATRIX_SIZE][MATRIX_SIZE], int result[MATRIX_SIZE][MATRIX_SIZE]) {
+    for (int i = 0; i < MATRIX_SIZE; i++) {
+        for (int j = 0; j < MATRIX_SIZE; j++) {
+            result[i][j] = (matrix1[i][0] * matrix2[0][j] + matrix1[i][1] * matrix2[1][j]) % 26;
+        }
+    }
+}
+
+void solve_key(int plaintext[MATRIX_SIZE][MATRIX_SIZE], int ciphertext[MATRIX_SIZE][MATRIX_SIZE], int key[MATRIX_SIZE][MATRIX_SIZE]) {
+    int inv_plaintext[MATRIX_SIZE][MATRIX_SIZE];
+
+    if (!inverse_matrix(plaintext, inv_plaintext)) {
+        printf("Cannot find key due to non-invertible matrix.\n");
+        return;
+    }
+
+    multiply_matrices(inv_plaintext, ciphertext, key);
+}
+
+void print_matrix(int matrix[MATRIX_SIZE][MATRIX_SIZE]) {
+    for (int i = 0; i < MATRIX_SIZE; i++) {
+        for (int j = 0; j < MATRIX_SIZE; j++) {
+            printf("%d ", matrix[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+int main() {
+
+    int plaintext[MATRIX_SIZE][MATRIX_SIZE] = {
+        {7, 4}, 
+        {11, 14} 
+    };
+
+    int ciphertext[MATRIX_SIZE][MATRIX_SIZE] = {
+        {19, 23}, 
+        {9, 20} 
+    };
+
+    int key[MATRIX_SIZE][MATRIX_SIZE];
+
+    solve_key(plaintext, ciphertext, key);
+
+    printf("Recovered Key Matrix:\n");
+    print_matrix(key);
+
+    return 0;
+}

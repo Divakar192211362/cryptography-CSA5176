@@ -1,0 +1,72 @@
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+
+#define MAX_LEN 100
+
+void encrypt(const char *plaintext, const int key[], char *ciphertext, int key_len) {
+    int i;
+    for (i = 0; i < strlen(plaintext); i++) {
+        if (isalpha(plaintext[i])) {
+            int shift = key[i % key_len];
+            char base = islower(plaintext[i]) ? 'a' : 'A';
+            ciphertext[i] = (plaintext[i] - base + shift) % 26 + base;
+        } else {
+            ciphertext[i] = plaintext[i]; 
+        }
+    }
+    ciphertext[i] = '\0';
+}
+
+void decrypt(const char *ciphertext, const int key[], char *plaintext, int key_len) {
+    int i;
+    for (i = 0; i < strlen(ciphertext); i++) {
+        if (isalpha(ciphertext[i])) {
+            int shift = key[i % key_len];
+            char base = islower(ciphertext[i]) ? 'a' : 'A';
+            plaintext[i] = (ciphertext[i] - base - shift + 26) % 26 + base;
+        } else {
+            plaintext[i] = ciphertext[i]; 
+        }
+    }
+    plaintext[i] = '\0';
+}
+
+int main() {
+    char plaintext[MAX_LEN] = "send more money";
+    char ciphertext[MAX_LEN];
+    char decrypted[MAX_LEN];
+    int key[] = {9, 0, 1, 7, 2, 3, 15, 21, 14, 11, 11, 1, 12, 8, 9};
+    int key_len = sizeof(key) / sizeof(key[0]);
+
+   
+    encrypt(plaintext, key, ciphertext, key_len);
+    printf("Ciphertext: %s\n", ciphertext);
+
+    decrypt(ciphertext, key, decrypted, key_len);
+    printf("Decrypted Text: %s\n", decrypted);
+
+    
+    char target_plaintext[MAX_LEN] = "cash not needed";
+    int new_key[MAX_LEN];
+    int target_len = strlen(target_plaintext);
+    
+
+    for (int i = 0; i < target_len; i++) {
+        if (isalpha(target_plaintext[i]) && isalpha(ciphertext[i])) {
+            char base_plain = islower(target_plaintext[i]) ? 'a' : 'A';
+            char base_cipher = islower(ciphertext[i]) ? 'a' : 'A';
+            new_key[i] = (ciphertext[i] - base_cipher - (target_plaintext[i] - base_plain) + 26) % 26;
+        } else {
+            new_key[i] = 0; 
+        }
+    }
+
+    printf("New Key for target plaintext:\n");
+    for (int i = 0; i < target_len; i++) {
+        printf("%d ", new_key[i]);
+    }
+    printf("\n");
+
+    return 0;
+}

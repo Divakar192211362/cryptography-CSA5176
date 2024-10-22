@@ -1,0 +1,109 @@
+#include <stdio.h>
+#include <stdint.h>
+
+#define ALPHABET_SIZE 26
+#define TOP_N 10
+
+
+
+int IP[64] = { /* Initial Permutation Table */ };
+int FP[64] = { /* Final Permutation Table */ };
+int E[48] = { /* Expansion Table */ };
+// Define P permutation table and S-Boxes
+
+int P[32] = { /* P permutation table */ };
+int S_BOXES[8][4][16] = { /* DES S-Boxes */ };
+int shift_schedule[16] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
+
+
+void initial_permutation(uint64_t *block) {
+    uint64_t temp = 0;
+    for (int i = 0; i < 64; i++) {
+        temp |= ((*block >> (64 - IP[i])) & 1) << (63 - i);
+    }
+    *block = temp;
+}
+
+
+void final_permutation(uint64_t *block) {
+    uint64_t temp = 0;
+    for (int i = 0; i < 64; i++) {
+        temp |= ((*block >> (64 - FP[i])) & 1) << (63 - i);
+    }
+    *block = temp;
+}
+
+
+uint64_t expansion(uint32_t R) {
+    uint64_t expanded = 0;
+    for (int i = 0; i < 48; i++) {
+        expanded |= ((R >> (32 - E[i])) & 1) << (47 - i);
+    }
+    return expanded;
+}
+
+
+uint32_t substitution(uint64_t expanded_R) {
+    uint32_t substituted = 0;
+    for (int i = 0; i < 8; i++) {
+        int row = ((expanded_R >> (42 - i * 6)) & 0x20) | ((expanded_R >> (42 - i * 6 + 5)) & 1);
+        int col = (expanded_R >> (43 - i * 6)) & 0xF;
+        substituted |= S_BOXES[i][row][col] << (28 - i * 4);
+    }
+    return substituted;
+}
+
+
+uint32_t permutation(uint32_t input) {
+    uint32_t permuted = 0;
+    for (int i = 0; i < 32; i++) {
+        permuted |= ((input >> (32 - P[i])) & 1) << (31 - i);
+    }
+    return permuted;
+}
+
+
+uint32_t feistel(uint32_t R, uint64_t subkey) {
+    uint64_t expanded_R = expansion(R);
+    expanded_R ^= subkey;
+    uint32_t substituted = substitution(expanded_R);
+    return permutation(substituted);
+}
+
+
+void generate_keys(uint64_t initial_key, uint64_t subkeys[16]) {
+    uint64_t C = (initial_key >> 28) & 0xFFFFFFF;
+    uint64_t D = initial_key & 0xFFFFFFF;
+    for (int i = 0; i < 16; i++) {
+        int shift_amount = shift_schedule[15 - i];
+        C = ((C << shift_amount) | (C >> (28 - shift_amount))) & 0xFFFFFFF;
+        D = ((D << shift_amount) | (D >> (28 - shift_amount))) & 0xFFFFFFF;
+        uint64_t combined = (C << 28) | D;
+        subkeys[15 - i] = combined; // You should apply PC2 permutation here
+    }
+}
+
+
+uint64_t des_decrypt(uint64_t ciphertext, uint64_t initial_key) {
+    uint64_t subkeys[16];
+    generate_keys(initial_key, subkeys);
+    initial_permutation(&ciphertext);
+    uint32_t L = (ciphertext >> 32) & 0xFFFFFFFF;
+    uint32_t R = ciphertext & 0xFFFFFFFF;
+    for (int i = 0; i < 16; i++) {
+        uint32_t temp = R;
+        R = L ^ feistel(R, subkeys[i]);
+        L = temp;
+    }
+    uint64_t combined = ((uint64_t)R << 32) | L;
+    final_permutation(&combined);
+    return combined;
+}
+
+int main() {
+    uint64_t ciphertext = 0x0123456789ABCDEF; // Example ciphertext
+    uint64_t key = 0x133457799BBCDFF1; // Example key
+    uint64_t plaintext = des_decrypt(ciphertext, key);
+    printf("Decrypted plaintext: %016llX\n", plaintext);
+    return 0;
+}

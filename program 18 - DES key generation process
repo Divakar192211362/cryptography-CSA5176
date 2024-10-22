@@ -1,0 +1,38 @@
+#include <stdio.h>
+#include <stdint.h>
+
+#define SHIFT_SCHEDULE_LENGTH 16
+
+int shift_schedule[SHIFT_SCHEDULE_LENGTH] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
+
+
+void generate_keys(uint64_t initial_key, uint64_t subkeys[16]) {
+    uint32_t C = (initial_key >> 28) & 0xFFFFFFF;
+    uint32_t D = initial_key & 0xFFFFFFF;         
+
+    for (int i = 0; i < 16; i++) {
+  
+        int shift_amount = shift_schedule[i];
+        C = ((C << shift_amount) | (C >> (28 - shift_amount))) & 0xFFFFFFF;
+        D = ((D << shift_amount) | (D >> (28 - shift_amount))) & 0xFFFFFFF;
+
+        
+        uint64_t subkey = (C & 0xFFFFFF) | ((D & 0xFFFFFFF0) << 24);
+        subkeys[i] = subkey; 
+    }
+}
+
+
+int main() {
+    uint64_t initial_key = 0x133457799BBCDFF1; 
+    uint64_t subkeys[16];
+
+    generate_keys(initial_key, subkeys);
+
+
+    for (int i = 0; i < 10; i++) {
+        printf("Subkey %2d: %016llX\n", i + 1, subkeys[i]);
+    }
+
+    return 0;
+}

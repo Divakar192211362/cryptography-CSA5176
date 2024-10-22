@@ -1,0 +1,92 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+
+#define BLOCK_SIZE 8 
+
+
+void xor_blocks(uint8_t *block1, uint8_t *block2, uint8_t *out_block) {
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        out_block[i] = block1[i] ^ block2[i];
+    }
+}
+
+
+void encrypt_block(uint8_t *plaintext, uint8_t *key, uint8_t *ciphertext) {
+    xor_blocks(plaintext, key, ciphertext);
+}
+
+
+void decrypt_block(uint8_t *ciphertext, uint8_t *key, uint8_t *plaintext) {
+    xor_blocks(ciphertext, key, plaintext); 
+}
+
+
+void ecb_encrypt(uint8_t *plaintext, uint8_t *key, uint8_t *ciphertext, int num_blocks) {
+    for (int i = 0; i < num_blocks; i++) {
+        encrypt_block(plaintext + i * BLOCK_SIZE, key, ciphertext + i * BLOCK_SIZE);
+    }
+}
+
+void ecb_decrypt(uint8_t *ciphertext, uint8_t *key, uint8_t *plaintext, int num_blocks) {
+    for (int i = 0; i < num_blocks; i++) {
+        decrypt_block(ciphertext + i * BLOCK_SIZE, key, plaintext + i * BLOCK_SIZE);
+    }
+}
+
+
+void cbc_encrypt(uint8_t *plaintext, uint8_t *key, uint8_t *ciphertext, uint8_t *iv, int num_blocks) {
+    uint8_t prev_cipher[BLOCK_SIZE];
+    memcpy(prev_cipher, iv, BLOCK_SIZE); 
+
+    for (int i = 0; i < num_blocks; i++) {
+        uint8_t temp_block[BLOCK_SIZE];
+        xor_blocks(plaintext + i * BLOCK_SIZE, prev_cipher, temp_block); 
+        encrypt_block(temp_block, key, ciphertext + i * BLOCK_SIZE);
+        memcpy(prev_cipher, ciphertext + i * BLOCK_SIZE, BLOCK_SIZE); 
+    }
+}
+
+
+void cbc_decrypt(uint8_t *ciphertext, uint8_t *key, uint8_t *plaintext, uint8_t *iv, int num_blocks) {
+    uint8_t prev_cipher[BLOCK_SIZE];
+    memcpy(prev_cipher, iv, BLOCK_SIZE); 
+    for (int i = 0; i < num_blocks; i++) {
+        uint8_t temp_block[BLOCK_SIZE];
+        decrypt_block(ciphertext + i * BLOCK_SIZE, key, temp_block);
+        xor_blocks(temp_block, prev_cipher, plaintext + i * BLOCK_SIZE); 
+        memcpy(prev_cipher, ciphertext + i * BLOCK_SIZE, BLOCK_SIZE);   
+    }
+}
+
+
+void introduce_error(uint8_t *ciphertext, int block_num) {
+    ciphertext[block_num * BLOCK_SIZE] ^= 0xFF; 
+}
+
+int main() {
+    uint8_t key[BLOCK_SIZE] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8};
+    uint8_t iv[BLOCK_SIZE] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}; 
+
+    uint8_t plaintext[2 * BLOCK_SIZE] = "HelloWorld!"; 
+    uint8_t ciphertext[2 * BLOCK_SIZE];
+    uint8_t decrypted_text[2 * BLOCK_SIZE];
+
+    printf("Original Plaintext: %s\n", plaintext);
+
+
+    ecb_encrypt(plaintext, key, ciphertext, 2);
+    introduce_error(ciphertext, 0); 
+    ecb_decrypt(ciphertext, key, decrypted_text, 2);
+
+    printf("ECB Mode Decrypted Text (with error): %s\n", decrypted_text);
+
+
+    cbc_encrypt(plaintext, key, ciphertext, iv, 2);
+    introduce_error(ciphertext, 0); 
+    cbc_decrypt(ciphertext, key, decrypted_text, iv, 2);
+
+    printf("CBC Mode Decrypted Text (with error): %s\n", decrypted_text);
+
+    return 0;
+}

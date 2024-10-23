@@ -1,0 +1,85 @@
+#include <stdio.h>
+#include <string.h>
+
+#define BLOCK_SIZE 8
+
+void xor_encrypt(char* block, char* key, int len) {
+    for (int i = 0; i < len; i++) {
+        block[i] ^= key[i];
+    }
+}
+
+void pad(char* plaintext, int len, int padded_len) {
+    int padding_len = padded_len - len;
+    plaintext[len] = 0x80;  // Add 1 followed by zeros (10000000 in binary)
+    for (int i = len + 1; i < padded_len; i++) {
+        plaintext[i] = 0x00;
+    }
+}
+
+void ECB_encrypt(char* plaintext, char* key, int len) {
+    printf("\nECB Mode:\n");
+    for (int i = 0; i < len; i += BLOCK_SIZE) {
+        char block[BLOCK_SIZE];
+        memcpy(block, plaintext + i, BLOCK_SIZE);
+        xor_encrypt(block, key, BLOCK_SIZE);
+        printf("Block %d: ", i / BLOCK_SIZE);
+        for (int j = 0; j < BLOCK_SIZE; j++) {
+            printf("%02X ", (unsigned char)block[j]);
+        }
+        printf("\n");
+    }
+}
+
+void CBC_encrypt(char* plaintext, char* key, char* iv, int len) {
+    printf("\nCBC Mode:\n");
+    char prev_block[BLOCK_SIZE];
+    memcpy(prev_block, iv, BLOCK_SIZE); // Initialization Vector
+
+    for (int i = 0; i < len; i += BLOCK_SIZE) {
+        char block[BLOCK_SIZE];
+        memcpy(block, plaintext + i, BLOCK_SIZE);
+        xor_encrypt(block, prev_block, BLOCK_SIZE); // XOR with IV or previous ciphertext block
+        xor_encrypt(block, key, BLOCK_SIZE); // Encrypt block
+        memcpy(prev_block, block, BLOCK_SIZE); // Save ciphertext block as next IV
+        printf("Block %d: ", i / BLOCK_SIZE);
+        for (int j = 0; j < BLOCK_SIZE; j++) {
+            printf("%02X ", (unsigned char)block[j]);
+        }
+        printf("\n");
+    }
+}
+
+void CFB_encrypt(char* plaintext, char* key, char* iv, int len) {
+    printf("\nCFB Mode:\n");
+    char feedback[BLOCK_SIZE];
+    memcpy(feedback, iv, BLOCK_SIZE); // Initialization Vector
+
+    for (int i = 0; i < len; i += BLOCK_SIZE) {
+        char block[BLOCK_SIZE];
+        memcpy(block, plaintext + i, BLOCK_SIZE);
+        xor_encrypt(feedback, key, BLOCK_SIZE); // Encrypt feedback
+        xor_encrypt(block, feedback, BLOCK_SIZE); // XOR plaintext with encrypted feedback
+        memcpy(feedback, block, BLOCK_SIZE); // Use ciphertext as feedback
+        printf("Block %d: ", i / BLOCK_SIZE);
+        for (int j = 0; j < BLOCK_SIZE; j++) {
+            printf("%02X ", (unsigned char)block[j]);
+        }
+        printf("\n");
+    }
+}
+
+int main() {
+    char key[BLOCK_SIZE] = {0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6, 0x07, 0x18}; // 64-bit key
+    char iv[BLOCK_SIZE] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}; // IV for CBC and CFB modes
+    char plaintext[32] = "HELLO WORLD"; // Plaintext (13 bytes), we will pad to 16 bytes
+
+    int padded_len = ((strlen(plaintext) / BLOCK_SIZE) + 1) * BLOCK_SIZE;
+    pad(plaintext, strlen(plaintext), padded_len);
+
+    ECB_encrypt(plaintext, key, padded_len);
+    CBC_encrypt(plaintext, key, iv, padded_len);
+    CFB_encrypt(plaintext, key, iv, padded_len);
+
+    return 0;
+}

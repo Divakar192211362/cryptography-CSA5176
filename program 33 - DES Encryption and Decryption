@@ -1,0 +1,103 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+
+#define DES_BLOCK_SIZE 8  // DES operates on 64-bit blocks
+#define DES_KEY_SIZE 8    // DES uses an 8-byte (64-bit) key
+#define ROUNDS 16         // Number of rounds in DES
+
+// S-boxes for DES
+static const uint8_t SBOX[8][4][16] = {
+    {
+        {14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7},
+        {0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8},
+        {4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0},
+        {15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13}
+    },
+    // ... (other S-boxes omitted for brevity)
+};
+
+// Permutation and other constants (omitted for brevity)
+// Define IP, IP_INVERSE, E, P, PC1, PC2, etc.
+
+// Function prototypes
+void key_schedule(uint64_t key, uint64_t round_keys[ROUNDS]);
+void feistel_function(uint32_t *R, uint64_t round_key);
+void des_encrypt(uint64_t plaintext, uint64_t key, uint64_t *ciphertext);
+void des_decrypt(uint64_t ciphertext, uint64_t key, uint64_t *plaintext);
+
+// Implement the key scheduling
+void key_schedule(uint64_t key, uint64_t round_keys[ROUNDS]) {
+    // Simplified for demonstration; actual implementation requires permutation and shifting
+    for (int i = 0; i < ROUNDS; i++) {
+        round_keys[i] = key; // In a real implementation, this would vary per round
+    }
+}
+
+// Implement the Feistel function
+void feistel_function(uint32_t *R, uint64_t round_key) {
+    // Simplified Feistel function (placeholder for actual implementation)
+    *R ^= (uint32_t)(round_key & 0xFFFFFFFF); // XOR with the round key for demonstration
+}
+
+// DES Encryption
+void des_encrypt(uint64_t plaintext, uint64_t key, uint64_t *ciphertext) {
+    uint32_t L = (plaintext >> 32) & 0xFFFFFFFF; // Left half
+    uint32_t R = plaintext & 0xFFFFFFFF;        // Right half
+    uint64_t round_keys[ROUNDS];
+
+    // Key schedule
+    key_schedule(key, round_keys);
+
+    // Initial permutation (placeholder)
+    // ...
+
+    // 16 rounds of DES
+    for (int i = 0; i < ROUNDS; i++) {
+        uint32_t temp = R;
+        feistel_function(&R, round_keys[i]);
+        R = L ^ R; // XOR with left half
+        L = temp;  // Save previous right half
+    }
+
+    // Combine halves and apply final permutation (placeholder)
+    *ciphertext = ((uint64_t)R << 32) | L; // Simple concatenation for output
+}
+
+// DES Decryption (similar to encryption)
+void des_decrypt(uint64_t ciphertext, uint64_t key, uint64_t *plaintext) {
+    uint32_t L = (ciphertext >> 32) & 0xFFFFFFFF; // Left half
+    uint32_t R = ciphertext & 0xFFFFFFFF;        // Right half
+    uint64_t round_keys[ROUNDS];
+
+    // Key schedule
+    key_schedule(key, round_keys);
+
+    // 16 rounds of DES in reverse order
+    for (int i = ROUNDS - 1; i >= 0; i--) {
+        uint32_t temp = L;
+        feistel_function(&L, round_keys[i]);
+        L = R ^ L; // XOR with right half
+        R = temp;  // Save previous left half
+    }
+
+    // Combine halves and apply final permutation (placeholder)
+    *plaintext = ((uint64_t)L << 32) | R; // Simple concatenation for output
+}
+
+int main() {
+    uint64_t key = 0x133457799BBCDFF1; // Example key (64-bit)
+    uint64_t plaintext = 0x0123456789ABCDEF; // Example plaintext (64-bit)
+    uint64_t ciphertext;
+
+    // Encrypt the plaintext
+    des_encrypt(plaintext, key, &ciphertext);
+    printf("Ciphertext: 0x%016llx\n", (unsigned long long)ciphertext);
+
+    // Decrypt the ciphertext
+    uint64_t decrypted_text;
+    des_decrypt(ciphertext, key, &decrypted_text);
+    printf("Decrypted Text: 0x%016llx\n", (unsigned long long)decrypted_text);
+
+    return 0;
+}

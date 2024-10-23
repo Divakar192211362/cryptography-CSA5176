@@ -1,0 +1,113 @@
+#include <stdio.h>
+#include <string.h>
+
+// XOR operation for 8-bit blocks
+void xor_blocks(char *block1, char *block2, char *result) {
+    for (int i = 0; i < 8; i++) {
+        result[i] = block1[i] ^ block2[i];
+    }
+}
+
+// Function to print 8-bit binary numbers
+void print_block(char *block) {
+    for (int i = 0; i < 8; i++) {
+        printf("%d", block[i]);
+    }
+    printf("\n");
+}
+
+// Simplified S-DES encryption (dummy function for now, replace with actual S-DES logic)
+void sdes_encrypt(char *counter, char *key, char *output) {
+    // For simplicity, this is just XOR with the key (replace with real S-DES)
+    for (int i = 0; i < 8; i++) {
+        output[i] = counter[i] ^ key[i % 5]; // Key is 5 bits, reused
+    }
+}
+
+// Increment an 8-bit binary counter
+void increment_counter(char *counter) {
+    for (int i = 7; i >= 0; i--) {
+        if (counter[i] == 0) {
+            counter[i] = 1;
+            break;
+        } else {
+            counter[i] = 0;
+        }
+    }
+}
+
+int main() {
+    // Plaintext (24 bits) divided into 3 blocks of 8 bits
+    char plaintext1[8] = {0, 0, 0, 0, 0, 0, 0, 1}; // Binary: 0000 0001
+    char plaintext2[8] = {0, 0, 0, 0, 0, 0, 1, 0}; // Binary: 0000 0010
+    char plaintext3[8] = {0, 0, 0, 0, 0, 1, 0, 0}; // Binary: 0000 0100
+
+    // Binary key for S-DES
+    char key[5] = {0, 1, 1, 1, 1}; // Binary: 01111
+
+    // Counter starts at 0000 0000 (8 bits)
+    char counter[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // Binary: 0000 0000
+
+    // Buffers for intermediate results
+    char temp_block[8], ciphertext1[8], ciphertext2[8], ciphertext3[8];
+    char decrypted1[8], decrypted2[8], decrypted3[8];
+
+    // Encryption in Counter Mode
+    printf("Counter Mode Encryption:\n");
+
+    // Encrypt counter and XOR with plaintext1
+    sdes_encrypt(counter, key, temp_block);
+    xor_blocks(temp_block, plaintext1, ciphertext1);
+    printf("Ciphertext Block 1: ");
+    print_block(ciphertext1);
+
+    // Increment counter
+    increment_counter(counter);
+
+    // Encrypt counter and XOR with plaintext2
+    sdes_encrypt(counter, key, temp_block);
+    xor_blocks(temp_block, plaintext2, ciphertext2);
+    printf("Ciphertext Block 2: ");
+    print_block(ciphertext2);
+
+    // Increment counter
+    increment_counter(counter);
+
+    // Encrypt counter and XOR with plaintext3
+    sdes_encrypt(counter, key, temp_block);
+    xor_blocks(temp_block, plaintext3, ciphertext3);
+    printf("Ciphertext Block 3: ");
+    print_block(ciphertext3);
+
+    // Reset counter to 0000 0000 for decryption
+    memset(counter, 0, 8);
+
+    // Decryption in Counter Mode
+    printf("\nCounter Mode Decryption:\n");
+
+    // Encrypt counter and XOR with ciphertext1
+    sdes_encrypt(counter, key, temp_block);
+    xor_blocks(temp_block, ciphertext1, decrypted1);
+    printf("Decrypted Block 1: ");
+    print_block(decrypted1);
+
+    // Increment counter
+    increment_counter(counter);
+
+    // Encrypt counter and XOR with ciphertext2
+    sdes_encrypt(counter, key, temp_block);
+    xor_blocks(temp_block, ciphertext2, decrypted2);
+    printf("Decrypted Block 2: ");
+    print_block(decrypted2);
+
+    // Increment counter
+    increment_counter(counter);
+
+    // Encrypt counter and XOR with ciphertext3
+    sdes_encrypt(counter, key, temp_block);
+    xor_blocks(temp_block, ciphertext3, decrypted3);
+    printf("Decrypted Block 3: ");
+    print_block(decrypted3);
+
+    return 0;
+}

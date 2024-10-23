@@ -1,0 +1,80 @@
+#include <stdio.h>
+#include <string.h>
+
+// XOR operation for 8-bit blocks
+void xor_blocks(char *block1, char *block2, char *result) {
+    for (int i = 0; i < 8; i++) {
+        result[i] = block1[i] ^ block2[i];
+    }
+}
+
+// Function to print 8-bit binary numbers
+void print_block(char *block) {
+    for (int i = 0; i < 8; i++) {
+        printf("%d", block[i]);
+    }
+    printf("\n");
+}
+
+// Simplified function for S-DES encryption (dummy implementation for illustration)
+void sdes_encrypt(char *plaintext, char *key, char *ciphertext) {
+    // Simplified encryption: XOR with the key (replace with actual S-DES logic)
+    for (int i = 0; i < 8; i++) {
+        ciphertext[i] = plaintext[i] ^ key[i % 5]; // Key is 5 bits long, repeating
+    }
+}
+
+// Simplified function for S-DES decryption (dummy implementation for illustration)
+void sdes_decrypt(char *ciphertext, char *key, char *plaintext) {
+    // Simplified decryption: XOR with the key (replace with actual S-DES logic)
+    for (int i = 0; i < 8; i++) {
+        plaintext[i] = ciphertext[i] ^ key[i % 5];
+    }
+}
+
+int main() {
+    // Initialization vector (IV) for CBC mode
+    char iv[8] = {1, 0, 1, 0, 1, 0, 1, 0}; // Binary: 1010 1010
+
+    // Plaintext (16 bits) split into 2 blocks of 8 bits
+    char plaintext1[8] = {0, 0, 0, 0, 0, 0, 0, 1}; // Binary: 0000 0001
+    char plaintext2[8] = {0, 0, 1, 0, 0, 0, 1, 1}; // Binary: 0010 0011
+
+    // Binary key for S-DES
+    char key[5] = {0, 1, 1, 1, 1}; // Binary: 01111
+
+    // CBC Encryption
+    printf("CBC Encryption:\n");
+    char temp_block[8];
+    char ciphertext1[8], ciphertext2[8];
+
+    // XOR IV with the first plaintext block and encrypt
+    xor_blocks(iv, plaintext1, temp_block);
+    sdes_encrypt(temp_block, key, ciphertext1);
+    printf("Ciphertext Block 1: ");
+    print_block(ciphertext1);
+
+    // XOR the first ciphertext block with the second plaintext block and encrypt
+    xor_blocks(ciphertext1, plaintext2, temp_block);
+    sdes_encrypt(temp_block, key, ciphertext2);
+    printf("Ciphertext Block 2: ");
+    print_block(ciphertext2);
+
+    // CBC Decryption
+    printf("\nCBC Decryption:\n");
+    char decrypted1[8], decrypted2[8];
+
+    // Decrypt the first ciphertext block and XOR with the IV
+    sdes_decrypt(ciphertext1, key, temp_block);
+    xor_blocks(temp_block, iv, decrypted1);
+    printf("Decrypted Block 1: ");
+    print_block(decrypted1);
+
+    // Decrypt the second ciphertext block and XOR with the first ciphertext block
+    sdes_decrypt(ciphertext2, key, temp_block);
+    xor_blocks(temp_block, ciphertext1, decrypted2);
+    printf("Decrypted Block 2: ");
+    print_block(decrypted2);
+
+    return 0;
+}
